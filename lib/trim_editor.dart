@@ -138,28 +138,6 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
         _videoEndPos = videoPlayerController.value.duration.inMilliseconds.toDouble();
 
       widget.onChangeEnd(_videoEndPos);
-
-      //The default maxDuration corresponds to 10 thumbnails
-      _numberOfThumbnails = ((_videoDuration / widget.maxDuration.inMilliseconds) * 10).toInt();
-      double _thumbnailWidth = _maxRegion / 10;
-
-      if (_numberOfThumbnails <= 10) { //The uploaded video duration is not greater than the maximum duration
-        _numberOfThumbnails = 10;
-        _thumbnailWidth = _maxRegion / 10;
-      }
-
-      final ThumbnailViewer _thumbnailWidget = ThumbnailViewer(
-        videoFile: _videoFile,
-        videoDuration: _videoDuration,
-        thumbnailHeight: widget.viewerHeight,
-        thumbnailWidth: _thumbnailWidth,
-        numberOfThumbnails: _numberOfThumbnails,
-        quality: widget.thumbnailQuality,
-        startSpace: _start,
-        endSpace: widget.viewerWidth - _end,
-        controller: controller,
-      );
-      thumbnailWidget = _thumbnailWidget;
     }
   }
 
@@ -209,6 +187,8 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
       _fraction = _videoDuration / _maxRegion;
     }
 
+    _initThumbnailViewer();
+
     _minLengthPixels =
         (widget.minDuration.inMilliseconds / widget.maxDuration.inMilliseconds) * _maxRegion;
     if (Duration(milliseconds: _videoDuration).inSeconds <= widget.minDuration.inSeconds)
@@ -231,6 +211,36 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
           _animationController.stop();
         }
       });
+  }
+
+  void _initThumbnailViewer(){
+    /*
+    //The default maxDuration corresponds to 10 thumbnails
+    _numberOfThumbnails = ((_videoDuration / widget.maxDuration.inMilliseconds) * 10).toInt();
+    double _thumbnailWidth = _maxRegion / 10;
+
+    if (_numberOfThumbnails <= 10) { //The uploaded video duration is not greater than the maximum duration
+      _numberOfThumbnails = 10;
+      _thumbnailWidth = _maxRegion / 10;
+    }
+*/
+
+    double _thumbnailWidth = widget.viewerHeight;
+    double lengthOfAllThumbs = _videoDuration / _fraction;
+    _numberOfThumbnails = (lengthOfAllThumbs / _thumbnailWidth).round();
+
+    final ThumbnailViewer _thumbnailWidget = ThumbnailViewer(
+      videoFile: _videoFile,
+      videoDuration: _videoDuration,
+      thumbnailHeight: widget.viewerHeight,
+      thumbnailWidth: _thumbnailWidth,
+      numberOfThumbnails: _numberOfThumbnails,
+      quality: widget.thumbnailQuality,
+      startSpace: _start,
+      endSpace: widget.viewerWidth - _end,
+      controller: controller,
+    );
+    thumbnailWidget = _thumbnailWidget;
   }
 
   @override
