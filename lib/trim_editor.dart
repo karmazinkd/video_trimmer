@@ -27,6 +27,7 @@ class TrimEditor extends StatefulWidget {
 
   final Function(double endValue) onChangeEnd;
 
+  ///This method may be called lots of times, check if the value is changed before doing smth.
   final Function(bool isPlaying) onChangePlaybackState;
 
   ///The max width of selection area in relation to viewerWidth, in percent. Value between 0.0 and 1.0, default - 0.8
@@ -245,7 +246,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    videoPlayerController.pause();
+    videoPlayerController?.pause();
     widget.onChangePlaybackState(false);
     if (_videoFile != null) {
       videoPlayerController.setVolume(0.0);
