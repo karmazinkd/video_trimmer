@@ -15,6 +15,8 @@ class TrimEditor extends StatefulWidget {
 
   final Duration minDuration;
 
+  final bool _isSelectionFixed;
+
   final Color scrubberPaintColor;
 
   final int thumbnailQuality;
@@ -33,6 +35,12 @@ class TrimEditor extends StatefulWidget {
   ///The max width of selection area in relation to viewerWidth, in percent. Value between 0.0 and 1.0, default - 0.8
   final double maxSelectionAreaPortion;
 
+  ///The width of the sliders (both left and right)
+  final double sliderWidth;
+
+  ///The color of the sliders (both left and right)
+  final Color sliderColor;
+
   TrimEditor({
     @required this.viewerWidth,
     @required this.viewerHeight,
@@ -46,6 +54,8 @@ class TrimEditor extends StatefulWidget {
     this.onChangeEnd,
     this.onChangePlaybackState,
     this.maxSelectionAreaPortion = 0.8,
+    this.sliderWidth = 10.0,
+    this.sliderColor = Colors.white,
   })
       : assert(viewerWidth != null),
         assert(viewerHeight != null),
@@ -53,7 +63,8 @@ class TrimEditor extends StatefulWidget {
         assert(thumbnailQuality != null),
         assert(showDuration != null),
         assert(durationTextStyle != null),
-        assert(maxSelectionAreaPortion != null);
+        assert(maxSelectionAreaPortion != null),
+        _isSelectionFixed = maxDuration.inMilliseconds == minDuration.inMilliseconds;
 
   @override
   _TrimEditorState createState() => _TrimEditorState();
@@ -74,7 +85,6 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
 
   double _start; //position of the left slider
   double _end; //position of the right slider
-  double _sliderLength = 10.0; //width of the slider
 
   double _arrivedLeft; //The slider reaches the leftmost position, in px
   double _arrivedRight; //The slider reaches the rightmost position, in px
@@ -149,7 +159,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
         _videoStartPos = (_start - _arrivedLeft + controller.offset) * _fraction;
         _videoEndPos = (_end - _arrivedLeft + controller.offset) * _fraction;
 
-        _linearTween.begin = _start + _sliderLength;
+        _linearTween.begin = _start + widget.sliderWidth;
         _linearTween.end = _end;
         _animationController.duration =
             Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());
@@ -196,7 +206,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
       _minLengthPixels = _maxRegion; //Can't drag
 
     // Defining the tween points
-    _linearTween = Tween(begin: _start + _sliderLength, end: _end);
+    _linearTween = Tween(begin: _start + widget.sliderWidth, end: _end);
 
     _animationController = AnimationController(
       vsync: this,
@@ -214,7 +224,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
       });
   }
 
-  void _initThumbnailViewer(){
+  void _initThumbnailViewer() {
     /*
     //The default maxDuration corresponds to 10 thumbnails
     _numberOfThumbnails = ((_videoDuration / widget.maxDuration.inMilliseconds) * 10).toInt();
@@ -324,15 +334,15 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
             _rightSlider(),
             Positioned(
               top: 0,
-              left: _start + _sliderLength,
+              left: _start + widget.sliderWidth,
               right: widget.viewerWidth - _end,
-              child: Container(height: 1, color: Colors.white),
+              child: Container(height: 1, color: widget.sliderColor),
             ),
             Positioned(
-              left: _start + _sliderLength,
+              left: _start + widget.sliderWidth,
               right: widget.viewerWidth - _end,
               bottom: 0,
-              child: Container(height: 1, color: Colors.white),
+              child: Container(height: 1, color: widget.sliderColor),
             ),
             Positioned(
               left: _scrubberAnimation.value,
@@ -340,7 +350,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
               bottom: 0,
               child: Container(
                 width: 2,
-                color: _scrubberAnimation.value <= (_start + _sliderLength + 1)
+                color: _scrubberAnimation.value <= (_start + widget.sliderWidth + 1)
                     ? Colors.transparent
                     : videoPlayerController.value.isPlaying
                     ? Colors.yellow
@@ -358,9 +368,12 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
   Widget _leftSlider() {
     Widget current = Container(
       height: 50,
-      width: _sliderLength,
-      color: _dragLeft ? Colors.yellow : Colors.white,
+      width: widget.sliderWidth,
+      color: _dragLeft ? Colors.yellow : widget.sliderColor,
     );
+
+    if(widget._isSelectionFixed)
+      return Positioned(left: _start, child: current);
 
     current = GestureDetector(
       onHorizontalDragStart: (details) {
@@ -393,7 +406,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
         await videoPlayerController.pause();
         await videoPlayerController.seekTo(Duration(milliseconds: _videoStartPos.toInt()));
 
-        _linearTween.begin = _start + _sliderLength;
+        _linearTween.begin = _start + widget.sliderWidth;
         _animationController.duration =
             Duration(milliseconds: (_videoEndPos - _videoStartPos).toInt());
         _animationController.reset();
@@ -409,9 +422,12 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
   Widget _rightSlider() {
     Widget current = Container(
       height: 50,
-      width: _sliderLength,
-      color: _dragRight ? Colors.yellow : Colors.white,
+      width: widget.sliderWidth,
+      color: _dragRight ? Colors.yellow : widget.sliderColor,
     );
+
+    if(widget._isSelectionFixed)
+      return Positioned(left: _end, child: current);
 
     current = GestureDetector(
       onHorizontalDragStart: (details) {
