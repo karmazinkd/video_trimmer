@@ -349,18 +349,20 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 2,
-                color: _scrubberAnimation.value <= (_start + widget.sliderWidth + 1)
-                    ? Colors.transparent
-                    : videoPlayerController.value.isPlaying
-                    ? Colors.yellow
-                    : Colors.yellow,
+                  width: 2,
+                  color: _getScrubberColor()
               ),
             ),
           ],
         ),
       ],
     );
+  }
+
+  Color _getScrubberColor() {
+    return _scrubberAnimation.value <= (_start + widget.sliderWidth + 1)
+        ? Colors.transparent
+        : widget.scrubberPaintColor;
   }
 
   bool _dragLeft = false;
@@ -372,7 +374,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
       color: _dragLeft ? Colors.yellow : widget.sliderColor,
     );
 
-    if(widget._isSelectionFixed)
+    if (widget._isSelectionFixed)
       return Positioned(left: _start, child: current);
 
     current = GestureDetector(
@@ -426,7 +428,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
       color: _dragRight ? Colors.yellow : widget.sliderColor,
     );
 
-    if(widget._isSelectionFixed)
+    if (widget._isSelectionFixed)
       return Positioned(left: _end, child: current);
 
     current = GestureDetector(
