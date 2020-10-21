@@ -26,8 +26,8 @@ class Trimmer {
 
   /// Loads a video using the path provided.
   ///
-  /// Returns the loaded video file.
-  Future<void> loadVideo({@required File videoFile}) async {
+  /// Returns the duration of the video file.
+  Future<Duration> loadVideo({@required File videoFile}) async {
     if(videoFile == null)
       throw ArgumentError("videoFile must not be null");
 
@@ -35,7 +35,7 @@ class Trimmer {
 
     videoPlayerController = VideoPlayerController.file(currentVideoFile);
     await videoPlayerController.initialize();
-    return;
+    return videoPlayerController.value.duration;
   }
 
   Future<String> _createFolderInAppDocDir(
