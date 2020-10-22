@@ -28,20 +28,22 @@ class Trimmer {
   ///
   /// Returns the duration of the video file.
   Future<Duration> loadVideo({@required File videoFile}) async {
-    if(videoFile == null)
+    if (videoFile == null)
       throw ArgumentError("videoFile must not be null");
 
-    currentVideoFile = videoFile;
+    // await dispose();
 
-    videoPlayerController = VideoPlayerController.file(currentVideoFile);
-    await videoPlayerController.initialize();
+    if (videoPlayerController == null) {
+      currentVideoFile = videoFile;
+
+      videoPlayerController = VideoPlayerController.file(currentVideoFile);
+      await videoPlayerController.initialize();
+    }
     return videoPlayerController.value.duration;
   }
 
-  Future<String> _createFolderInAppDocDir(
-    String folderName,
-    StorageDir storageDir,
-  ) async {
+  Future<String> _createFolderInAppDocDir(String folderName,
+      StorageDir storageDir,) async {
     Directory _directory;
 
     if (storageDir == null) {
@@ -111,6 +113,9 @@ class Trimmer {
   /// it is set to [applicationDocumentsDirectory]. Some of the
   /// storage types are:
   ///
+  /// The parameter [overwriteFile] is used for overwriting if the same file name exists,
+  /// By default it is set to `false`
+  ///
   /// * [temporaryDirectory] (Only accessible from inside the app, can be
   /// cleared at anytime)
   ///
@@ -156,6 +161,7 @@ class Trimmer {
     String videoFolderName,
     String videoFileName,
     StorageDir storageDir,
+    bool overwriteFile = false,
     Function(double progress) onProgress,
   }) async {
     final String _videoPath = currentVideoFile.path;
@@ -196,7 +202,9 @@ class Trimmer {
       _outputFormatString = outputFormat.toString();
     }
 
-    String _trimLengthCommand = '-i "$_videoPath" -ss $startPoint -t ${endPoint - startPoint}';
+    String overwriteFlag = overwriteFile ? "-y " : "";
+
+    String _trimLengthCommand = '$overwriteFlag-i "$_videoPath" -ss $startPoint -t ${endPoint - startPoint}';
 
     if (ffmpegCommand == null) {
       _command = '$_trimLengthCommand -c:a copy ';
@@ -213,7 +221,7 @@ class Trimmer {
           scaleGIF = 480;
         }
         _command =
-            '$_trimLengthCommand -vf "fps=$fpsGIF,scale=$scaleGIF:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 ';
+        '$_trimLengthCommand -vf "fps=$fpsGIF,scale=$scaleGIF:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 ';
       }
     } else {
       _command = '$_trimLengthCommand $ffmpegCommand ';
@@ -274,5 +282,17 @@ class Trimmer {
 
   File getVideoFile() {
     return currentVideoFile;
+  }
+
+  ///Disposes [videoPlayerController] and clears [currentVideoFile].
+  Future<void> dispose() async {
+    if (videoPlayerController != null) {
+      await videoPlayerController.setVolume(0.0);
+      await videoPlayerController.pause();
+      await videoPlayerController.dispose();
+      videoPlayerController = null;
+    }
+    currentVideoFile = null;
+    return;
   }
 }
