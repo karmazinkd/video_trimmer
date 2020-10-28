@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:path/path.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
@@ -21,17 +20,12 @@ import 'package:video_trimmer/trim_editor.dart';
 class Trimmer {
   static File currentVideoFile;
 
-  final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-  final FlutterFFmpegConfig _flutterFFmpegConfig = new FlutterFFmpegConfig();
-
   /// Loads a video using the path provided.
   ///
   /// Returns the duration of the video file.
   Future<Duration> loadVideo({@required File videoFile}) async {
     if (videoFile == null)
       throw ArgumentError("videoFile must not be null");
-
-    // await dispose();
 
     if (videoPlayerController == null) {
       currentVideoFile = videoFile;
@@ -77,178 +71,6 @@ class Trimmer {
       final Directory _directoryNewFolder = await _directoryFolder.create(recursive: true);
       return _directoryNewFolder.path;
     }
-  }
-
-  /// Saves the trimmed video to file system.
-  ///
-  /// Returns the output video path
-  ///
-  /// The required parameters are [startValue] & [endValue].
-  ///
-  /// The optional parameters are [videoFolderName], [videoFileName],
-  /// [outputFormat], [fpsGIF], [scaleGIF], [applyVideoEncoding].
-  ///
-  /// The `@required` parameter [startValue] is for providing a starting point
-  /// to the trimmed video. To be specified in `milliseconds`.
-  ///
-  /// The `@required` parameter [endValue] is for providing an ending point
-  /// to the trimmed video. To be specified in `milliseconds`.
-  ///
-  /// The parameter [videoFolderName] is used to
-  /// pass a folder name which will be used for creating a new
-  /// folder in the selected directory. The default value for
-  /// it is `Trimmer`.
-  ///
-  /// The parameter [videoFileName] is used for giving
-  /// a new name to the trimmed video file. By default the
-  /// trimmed video is named as `<original_file_name>_trimmed.mp4`.
-  ///
-  /// The parameter [outputFormat] is used for providing a
-  /// file format to the trimmed video. This only accepts value
-  /// of [FileFormat] type. By default it is set to `FileFormat.mp4`,
-  /// which is for `mp4` files.
-  ///
-  /// The parameter [storageDir] can be used for providing a storage
-  /// location option. It accepts only [StorageDir] values. By default
-  /// it is set to [applicationDocumentsDirectory]. Some of the
-  /// storage types are:
-  ///
-  /// The parameter [overwriteFile] is used for overwriting if the same file name exists,
-  /// By default it is set to `false`
-  ///
-  /// * [temporaryDirectory] (Only accessible from inside the app, can be
-  /// cleared at anytime)
-  ///
-  /// * [applicationDocumentsDirectory] (Only accessible from inside the app)
-  ///
-  /// * [externalStorageDirectory] (Supports only `Android`, accessible externally)
-  ///
-  /// The parameters [fpsGIF] & [scaleGIF] are used only if the
-  /// selected output format is `FileFormat.gif`.
-  ///
-  /// * [fpsGIF] for providing a FPS value (by default it is set
-  /// to `10`)
-  ///
-  ///
-  /// * [scaleGIF] for proving a width to output GIF, the height
-  /// is selected by maintaining the aspect ratio automatically (by
-  /// default it is set to `480`)
-  ///
-  ///
-  /// * [applyVideoEncoding] for specifying whether to apply video
-  /// encoding (by default it is set to `false`).
-  ///
-  ///
-  /// ADVANCED OPTION:
-  ///
-  /// If you want to give custom `FFmpeg` command, then define
-  /// [ffmpegCommand] & [customVideoFormat] strings. The `input path`,
-  /// `output path`, `start` and `end` position is already define.
-  ///
-  /// NOTE: The advanced option does not provide any safety check, so if wrong
-  /// video format is passed in [customVideoFormat], then the app may
-  /// crash.
-  ///
-  Future<String> saveTrimmedVideo({
-    @required double startValue,
-    @required double endValue,
-    bool applyVideoEncoding = false,
-    FileFormat outputFormat,
-    String ffmpegCommand,
-    String customVideoFormat,
-    int fpsGIF,
-    int scaleGIF,
-    String videoFolderName,
-    String videoFileName,
-    StorageDir storageDir,
-    bool overwriteFile = false,
-    Function(double progress) onProgress,
-  }) async {
-    final String _videoPath = currentVideoFile.path;
-    final String _videoName = basename(_videoPath).split('.')[0];
-
-    String _command;
-
-    // Formatting Date and Time
-    String dateTime = DateFormat('yyyy-MMdd-HHmmss').format(DateTime.now()).toString();
-
-    // String _resultString;
-    String _outputPath;
-    String _outputFormatString;
-    String formattedDateTime = dateTime.replaceAll(' ', '');
-
-    _flutterFFmpegConfig.resetStatistics();
-
-    if (videoFolderName == null) {
-      videoFolderName = "Trimmer";
-    }
-
-    if (videoFileName == null) {
-      videoFileName = "${_videoName}_trimmed_$formattedDateTime";
-    }
-
-    videoFileName = videoFileName.replaceAll(' ', '_');
-
-    String path = await _createFolderInAppDocDir(videoFolderName, storageDir);
-
-    Duration startPoint = Duration(milliseconds: startValue.toInt());
-    Duration endPoint = Duration(milliseconds: endValue.toInt());
-
-    if (outputFormat == null) {
-      outputFormat = FileFormat.mp4;
-      _outputFormatString = outputFormat.toString();
-      print('OUTPUT: $_outputFormatString');
-    } else {
-      _outputFormatString = outputFormat.toString();
-    }
-
-    String overwriteFlag = overwriteFile ? "-y " : "";
-
-    String _trimLengthCommand = '$overwriteFlag-i "$_videoPath" -ss $startPoint -t ${endPoint - startPoint}';
-
-    if (ffmpegCommand == null) {
-      _command = '$_trimLengthCommand -c:a copy ';
-
-      if (!applyVideoEncoding) {
-        _command += '-c:v copy ';
-      }
-
-      if (outputFormat == FileFormat.gif) {
-        if (fpsGIF == null) {
-          fpsGIF = 10;
-        }
-        if (scaleGIF == null) {
-          scaleGIF = 480;
-        }
-        _command =
-        '$_trimLengthCommand -vf "fps=$fpsGIF,scale=$scaleGIF:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 ';
-      }
-    } else {
-      _command = '$_trimLengthCommand $ffmpegCommand ';
-      _outputFormatString = customVideoFormat;
-    }
-
-    _outputPath = '$path$videoFileName$_outputFormatString';
-
-    _command += '"$_outputPath"';
-
-    _flutterFFmpegConfig.enableStatisticsCallback((stats) {
-      if (onProgress == null) return;
-
-      double p = stats.time / (endValue - startValue);
-
-      onProgress(p);
-    });
-
-    print('ffmpeg command: ' + _command);
-    int ret = await _flutterFFmpeg.execute(_command);
-    if (ret != 0) throw Exception({'error': ret, 'message': 'ffmpeg command error'});
-
-    return _outputPath;
-  }
-
-  Future cancel() async {
-    await _flutterFFmpeg.cancel();
   }
 
   /// For getting the video controller state, to know whether the
