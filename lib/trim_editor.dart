@@ -25,6 +25,8 @@ class TrimEditor extends StatefulWidget {
 
   final TextStyle durationTextStyle;
 
+  final TextStyle durationSelectionTextStyle;
+
   final Function(double startValue) onChangeStart;
 
   final Function(double endValue) onChangeEnd;
@@ -41,6 +43,12 @@ class TrimEditor extends StatefulWidget {
   ///The color of the sliders (both left and right)
   final Color sliderColor;
 
+  ///Padding for the time lables (start and end)
+  final double sideTimePadding;
+
+  ///Background color of thumb slider pane
+  final Color thumbBackgroundColor;
+
   TrimEditor({
     @required this.viewerWidth,
     @required this.viewerHeight,
@@ -50,12 +58,15 @@ class TrimEditor extends StatefulWidget {
     this.thumbnailQuality = 75,
     this.showDuration = true,
     this.durationTextStyle = const TextStyle(color: Colors.white),
+    this.durationSelectionTextStyle = const TextStyle(color: Colors.white),
     this.onChangeStart,
     this.onChangeEnd,
     this.onChangePlaybackState,
     this.maxSelectionAreaPortion = 0.8,
     this.sliderWidth = 10.0,
     this.sliderColor = Colors.white,
+    this.sideTimePadding = 0.0,
+    this.thumbBackgroundColor = Colors.transparent,
   })
       : assert(viewerWidth != null),
         assert(viewerHeight != null),
@@ -122,7 +133,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
     }
   }
 
-  void videoPlayerControllerListener(){
+  void videoPlayerControllerListener() {
     final bool isPlaying = videoPlayerController.value.isPlaying;
 
     if (isPlaying) {
@@ -259,7 +270,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
   @override
   void dispose() {
     videoPlayerController?.pause();
-    videoPlayerController?.removeListener(videoPlayerControllerListener);//todo
+    videoPlayerController?.removeListener(videoPlayerControllerListener); //todo
     widget.onChangePlaybackState(false);
     controller?.dispose();
     super.dispose();
@@ -298,22 +309,32 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
             ? Container(
           width: widget.viewerWidth,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                Text(
-                  _showTime('start'),
-                  style: widget.durationTextStyle,
+            padding: const EdgeInsets.only(bottom: 6.0),
+
+            child: Stack(
+              children: [
+                Positioned(
+                  bottom: 0,
+                  left: widget.sideTimePadding,
+                  child: Text(
+                    _showTime('start'),
+                    style: widget.durationTextStyle,
+                  ),
                 ),
-                Text(
-                  _showTime('duration'),
-                  style: widget.durationTextStyle,
+                Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    _showTime('duration'),
+                    style: widget.durationSelectionTextStyle,
+                  ),
                 ),
-                Text(
-                  _showTime('end'),
-                  style: widget.durationTextStyle,
+                Positioned(
+                  bottom: 0,
+                  right: widget.sideTimePadding,
+                  child: Text(
+                    _showTime('end'),
+                    style: widget.durationTextStyle,
+                  ),
                 ),
               ],
             ),
@@ -323,6 +344,7 @@ class _TrimEditorState extends State<TrimEditor> with TickerProviderStateMixin {
         Stack(
           children: [
             Container(
+              color: widget.thumbBackgroundColor,
               height: widget.viewerHeight,
               width: widget.viewerWidth,
               child: thumbnailWidget == null ? Column() : thumbnailWidget,
