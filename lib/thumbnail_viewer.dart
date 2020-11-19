@@ -41,12 +41,18 @@ class ThumbnailViewer extends StatelessWidget {
 
     for (int i = 1; i <= numberOfThumbnails; i++) {
       Uint8List _bytes;
-      _bytes = await VideoThumbnail.thumbnailData(
-        video: _videoPath,
-        imageFormat: ImageFormat.JPEG,
-        timeMs: (_eachPart * i).toInt(),
-        quality: quality,
-      );
+      try {
+        _bytes = await VideoThumbnail.thumbnailData(
+                video: _videoPath,
+                imageFormat: ImageFormat.JPEG,
+                timeMs: (_eachPart * i).toInt(),
+                quality: quality,
+              );
+      } catch (e) {
+        print("ThumbnailViewer received an error while calling VideoThumbnail.thumbnailData to"
+            " get a thumbnail. Error message: ${e.toString()}");
+        continue;
+      }
 
       _byteList.add(_bytes);
 
